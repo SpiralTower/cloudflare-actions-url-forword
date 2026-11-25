@@ -75,6 +75,56 @@ describe('Actions URL redirect Worker', () => {
     })
   })
 
+  it('discovers repo.git through the repository without the suffix', async () => {
+    const writes = []
+    const requests = []
+    const handler = createWorker({
+      fetch: async (url) => {
+        requests.push(url)
+        return new Response(null, { status: 200 })
+      },
+      now: () => NOW,
+    })
+
+    const response = await handler.fetch(
+      new Request(
+        'https://worker.example.com/actions/repo.git/info/refs?service=git-upload-pack',
+      ),
+      cacheEnv(writes),
+      createContext(),
+    )
+
+    expect(response.headers.get('location')).toBe(
+      `${FORGEJO_BASE_URL}/actions/repo.git/info/refs?service=git-upload-pack`,
+    )
+    expect(requests).toEqual([`${FORGEJO_BASE_URL}/api/v1/repos/actions/repo`])
+    expect(writes[0].key).toBe('repo:v1:actions/repo')
+  })
+
+  it('accepts percent-encoded owner and repository names', async () => {
+    const requests = []
+    const handler = createWorker({
+      fetch: async (url) => {
+        requests.push(url)
+        return new Response(null, { status: 200 })
+      },
+      now: () => NOW,
+    })
+
+    const response = await handler.fetch(
+      new Request('https://worker.example.com/%61ctions/check%6Fut@v4'),
+      cacheEnv([]),
+      createContext(),
+    )
+
+    expect(requests).toEqual([
+      `${FORGEJO_BASE_URL}/api/v1/repos/actions/checkout`,
+    ])
+    expect(response.headers.get('location')).toBe(
+      `${FORGEJO_BASE_URL}/%61ctions/check%6Fut`,
+    )
+  })
+
   it('falls back temporarily when the Forgejo API is unavailable', async () => {
     const writes = []
     const env = cacheEnv(writes)
@@ -479,6 +529,7 @@ describe('Actions URL redirect Worker', () => {
   })
 
   it('continues discovery when KV read fails', async () => {
+    const errors = []
     let apiRequests = 0
     const handler = createWorker({
       fetch: async () => {
@@ -486,6 +537,12 @@ describe('Actions URL redirect Worker', () => {
         return new Response(null, { status: 200 })
       },
       now: () => NOW,
+      logger: {
+        log() {},
+        error(value) {
+          errors.push(JSON.parse(value))
+        },
+      },
     })
     const env = {
       ...BASE_ENV,
@@ -507,6 +564,13 @@ describe('Actions URL redirect Worker', () => {
       `${FORGEJO_BASE_URL}/actions/checkout`,
     )
     expect(apiRequests).toBe(1)
+    expect(errors).toEqual([
+      expect.objectContaining({
+        event: 'actions_cache_read_failed',
+        repo: 'actions/checkout',
+        errorType: 'Error',
+      }),
+    ])
   })
 
   it('continues redirecting when KV write fails', async () => {

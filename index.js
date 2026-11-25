@@ -170,7 +170,12 @@ export function createWorker({
         return jsonError(500, 'worker_configuration_invalid')
       }
       const key = cacheKey(repo.owner, repo.repo)
-      const cached = await readCache(env.ACTIONS_CACHE, key)
+      const cached = await readCache(env.ACTIONS_CACHE, key, {
+        logger,
+        repo: `${repo.owner}/${repo.repo}`,
+        method,
+        targetPath,
+      })
       let upstream
       let cacheState
       let reason
@@ -366,13 +371,11 @@ function requestTargetPath(pathname) {
 }
 
 function redirectPath(pathname, repo) {
-  const prefixLength = 1 + repo.owner.length + 1
-  const repositoryPath = '/' + repo.owner + '/' + repo.repo
-  const repoEnd = repositoryPath.length
-  const suffix = pathname.slice(
-    pathname.indexOf(repo.repo, prefixLength) + repo.repo.length,
-  )
-  return pathname.slice(0, repoEnd) + suffix.replace(/@[^/]*$/, '')
+  const secondSlash = pathname.indexOf('/', 1)
+  const thirdSlash = pathname.indexOf('/', secondSlash + 1)
+  const repoEnd = thirdSlash === -1 ? pathname.length : thirdSlash
+  const repoPath = pathname.slice(0, repoEnd)
+  return repoPath.replace(/(?:@|%40)[^/]*$/i, '') + pathname.slice(repoEnd)
 }
 
 function parseRepositoryPath(targetPath) {
@@ -430,10 +433,19 @@ function validateBaseURL(value, name) {
   return value
 }
 
-async function readCache(cache, key) {
+async function readCache(cache, key, context) {
   try {
     return await cache.get(key, 'json')
-  } catch {
+  } catch (error) {
+    context.logger.error(
+      JSON.stringify({
+        event: 'actions_cache_read_failed',
+        repo: context.repo.toLowerCase(),
+        method: context.method,
+        targetPath: context.targetPath,
+        errorType: error.name ?? 'Error',
+      }),
+    )
     return null
   }
 }
