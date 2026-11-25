@@ -85,6 +85,8 @@ describe('Actions Worker in Miniflare', () => {
         redirect: 'manual',
         headers: {
           Cookie: 'session=must-not-leak',
+          'User-Agent': 'must-not-reach-api/client',
+          'X-Client-Header': 'must-not-reach-api',
         },
       },
     )
@@ -100,6 +102,11 @@ describe('Actions Worker in Miniflare', () => {
     )
     expect(upstreamRequests[0].headers.get('cookie')).toBeNull()
     expect(upstreamRequests[0].headers.get('authorization')).toBeNull()
+    expect(upstreamRequests[0].headers.get('user-agent')).not.toBe(
+      'must-not-reach-api/client',
+    )
+    expect(upstreamRequests[0].headers.get('x-client-header')).toBeNull()
+    expect(upstreamRequests[0].headers.get('accept')).toBe('application/json')
   })
 
   it('persists discovery results in KV and reuses them across runtime restarts', async () => {
