@@ -1,5 +1,7 @@
 # cloudflare-actions-url-forword
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 Cloudflare Worker implementation of a Forgejo `DEFAULT_ACTIONS_URL` redirect
 endpoint. It sends anonymous Actions and Git requests to the matching public
 repository on your Forgejo instance when that repository exists, and otherwise
