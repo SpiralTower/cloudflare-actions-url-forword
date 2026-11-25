@@ -1,0 +1,24 @@
+{
+  "name": "cloudflare-actions-url-forword",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Redirect Forgejo Actions URLs to a public Forgejo or GitHub",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "format": "prettier --write '**/*.{js,json,md,yml,yaml}'",
+    "format:check": "prettier --check '**/*.{js,json,md,yml,yaml}'",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:worker": "wrangler deploy --dry-run --outdir dist"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "miniflare": "4.20260730.0",
+    "prettier": "3.10.1",
+    "vitest": "5.1.2",
+    "wrangler": "4.168.0"
+  }
+}
