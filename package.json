@@ -20,5 +20,11 @@
     "prettier": "3.10.1",
     "vitest": "5.1.2",
     "wrangler": "4.168.0"
+  },
+  "overrides": {
+    "miniflare@4.20260730.0": {
+      "undici": "7.30.2",
+      "sharp": "0.35.5"
+    }
   }
 }
