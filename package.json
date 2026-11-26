@@ -12,6 +12,19 @@
     "test:watch": "vitest",
     "check:worker": "wrangler deploy --dry-run --outdir dist"
   },
+  "cloudflare": {
+    "bindings": {
+      "FORGEJO_BASE_URL": {
+        "description": "Required. Enter your public Forgejo root URL, for example `https://forgejo.example.com`. Use `http://` or `https://`, and do not include a path, query, fragment, or trailing slash."
+      },
+      "FALLBACK_BASE_URL": {
+        "description": "Optional. The root URL to use when a repository is not found on Forgejo. The default is `https://github.com`."
+      },
+      "ACTIONS_CACHE": {
+        "description": "Required KV namespace. Cloudflare creates or binds it during Deploy to Cloudflare. It caches repository discovery results."
+      }
+    }
+  },
   "engines": {
     "node": ">=22"
   },

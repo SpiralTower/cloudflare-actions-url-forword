@@ -7,9 +7,6 @@ endpoint. It sends anonymous Actions and Git requests to the matching public
 repository on your Forgejo instance when that repository exists, and otherwise
 to GitHub (or another fallback base URL).
 
-The Worker exposes no management API. It discovers repositories through the
-Forgejo REST API and stores the result in Workers KV.
-
 ## How it works
 
 For a request such as:
@@ -60,6 +57,10 @@ requires the Git client to follow the initial redirect; requests after that
 redirect go directly to the selected upstream rather than returning to the
 Worker.
 
+## One-click deployment to Cloudflare
+
+[Deploy to Cloudflare](https://deploy.workers.cloudflare.com/?url=https://github.com/SpiralTower/cloudflare-actions-url-forword)
+
 ## Configure Cloudflare
 
 Install dependencies and authenticate Wrangler:
@@ -69,19 +70,24 @@ npm install
 npx wrangler login
 ```
 
-Create the production KV namespace:
+For manual deployment, create the production KV namespace:
 
 ```sh
 npx wrangler kv namespace create ACTIONS_CACHE
 ```
 
-Copy the returned namespace ID into `wrangler.toml` in place of the placeholder:
+Copy the returned namespace ID into `wrangler.toml`:
 
 ```toml
 [[kv_namespaces]]
 binding = "ACTIONS_CACHE"
 id = "your-kv-namespace-id"
 ```
+
+Alternatively, keep the `ACTIONS_CACHE` binding without an `id` and let
+`wrangler deploy` provision the namespace. For repository-based Deploy to
+Cloudflare builds, the generated resource ID may be visible in the dashboard
+instead of being written back to the repository.
 
 Store the Forgejo root URL as an encrypted secret. It must use `http://` or
 `https://`, must be a root URL, and must not have a path, query, fragment, or
@@ -187,15 +193,3 @@ Confirm the Worker log shows the expected `upstream` and `cacheState`. Git and
 archive traffic after the first redirect goes directly to Forgejo or the
 fallback source, so the Worker cannot observe or redirect later upstream
 errors.
-
-## Known limitations
-
-- Only anonymous public repositories are supported.
-- A fresh `forgejo` cache entry stays selected for up to one day even if the
-  repository later becomes temporarily unavailable.
-- Redirect responses do not rewrite upstream CORS or `Content-Type` headers.
-  Those headers come from Forgejo, GitHub, or Codeload after the client follows
-  the redirect.
-- The cache coalescing map is per isolate; Cloudflare edge locations can still
-  make independent discovery requests.
-- The project provides no administration or manual cache-editing API.

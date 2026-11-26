@@ -1,0 +1,4 @@
+# Worker runtime configuration for Deploy to Cloudflare.
+# Replace the example value in the Cloudflare setup page. Do not commit real secrets.
+FORGEJO_BASE_URL=https://forgejo.example.com
+FALLBACK_BASE_URL=https://github.com

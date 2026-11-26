@@ -6,9 +6,6 @@
 当对应仓库存在于你的 Forgejo 实例中时，它会把匿名的 Actions 和 Git 请求发送到
 该公开仓库；否则，请求会转到 GitHub 或其他配置的默认源。
 
-Worker 不提供管理 API。它通过 Forgejo REST API 自动发现仓库，并将结果存入
-Workers KV。
-
 ## 工作方式
 
 对于以下请求：
@@ -55,6 +52,10 @@ https://forgejo.example.com/actions/checkout
 客户端跟随第一次重定向；重定向之后的请求会直接发往选定的上游，而不会回到
 Worker。
 
+## Cloudflare 一键部署
+
+[Deploy to Cloudflare](https://deploy.workers.cloudflare.com/?url=https://github.com/SpiralTower/cloudflare-actions-url-forword)
+
 ## 配置 Cloudflare
 
 安装依赖并认证 Wrangler：
@@ -64,19 +65,23 @@ npm install
 npx wrangler login
 ```
 
-创建生产 KV 命名空间：
+手动部署时，创建生产 KV 命名空间：
 
 ```sh
 npx wrangler kv namespace create ACTIONS_CACHE
 ```
 
-将返回的命名空间 ID 写入 `wrangler.toml`，替换占位符：
+将返回的命名空间 ID 写入 `wrangler.toml`：
 
 ```toml
 [[kv_namespaces]]
 binding = "ACTIONS_CACHE"
 id = "your-kv-namespace-id"
 ```
+
+也可以保留不含 `id` 的 `ACTIONS_CACHE` binding，由 `wrangler deploy` 自动
+创建 namespace。通过仓库自动部署时，自动创建的资源 ID 可能只显示在
+Dashboard，而不会写回仓库。
 
 将 Forgejo 根地址保存为加密 secret。该地址必须使用 `http://` 或 `https://`，
 只能是根地址，不能包含路径、查询字符串、片段或结尾斜杠：
@@ -173,13 +178,3 @@ git ls-remote https://actions.example.com/actions/checkout
 确认 Worker 日志显示预期的 `upstream` 和 `cacheState`。第一次重定向后的 Git 和
 archive 流量会直接发往 Forgejo 或默认源，因此 Worker 无法观察或再次重定向后续
 上游错误。
-
-## 已知限制
-
-- 仅支持匿名的公开仓库。
-- 新鲜的 `forgejo` 缓存项最长会在一天内保持选中，即使仓库随后临时不可用。
-- Worker 的重定向响应不会改写上游 CORS 或 `Content-Type` 请求头。客户端跟随
-  重定向后，这些请求头来自 Forgejo、GitHub 或 Codeload。
-- 缓存合并 Map 只在单个 isolate 内有效，不同 Cloudflare 边缘位置仍可能独立
-  发起发现请求。
-- 项目不提供管理或手动编辑缓存的 API。

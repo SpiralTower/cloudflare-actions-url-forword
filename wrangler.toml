@@ -1,13 +1,13 @@
 name = "cloudflare-actions-url-forword"
 main = "index.js"
 compatibility_date = "2026-11-26"
+keep_vars = true
 
 [vars]
 FALLBACK_BASE_URL = "https://github.com"
 
 [[kv_namespaces]]
 binding = "ACTIONS_CACHE"
-id = "00000000000000000000000000000000"
 
 [secrets]
 required = ["FORGEJO_BASE_URL"]
